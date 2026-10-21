@@ -1,0 +1,18 @@
+# live-trading requirements (transaction signing SDKs)
+# 实盘依赖（交易签名 SDK）
+-r requirements.txt
+
+# Hyperliquid signing (Entropy leg, and the tradexyz hedge)
+hyperliquid-python-sdk>=0.9
+eth-account>=0.10
+
+# websockets follows ALL_PROXY/HTTPS_PROXY in production; SOCKS proxy support
+# is an optional dependency and must be present for market/account streams.
+python-socks[asyncio]>=2.4
+
+# Lighter signing (only needed with --hedge lighter / lighter-rh).
+# Installs from the SDK's current main; for reproducible deploys, append a
+# known-good commit: ...lighter-python.git@<commit-sha>
+# 仅当 --hedge 为 lighter / lighter-rh 时需要。默认安装 SDK 最新主分支；
+# 如需可复现部署，可在末尾固定 commit：...lighter-python.git@<commit-sha>
+lighter-sdk @ git+https://github.com/elliottech/lighter-python.git@a38b6405f362fc14a562fe7a97df03f3ee756bc1

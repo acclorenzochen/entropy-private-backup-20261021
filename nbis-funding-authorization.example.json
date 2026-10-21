@@ -1,0 +1,8 @@
+{
+  "batch_id": "REQUIRES_EXPLICIT_USER_AUTHORIZATION_NBIS",
+  "pair_identity": "nbis-funding:hl:NBIS:lighter:NBIS",
+  "max_position_cycles": 1,
+  "loss_budget_usd": null,
+  "max_notional_usd": "200",
+  "approved_live": false
+}

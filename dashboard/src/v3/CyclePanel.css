@@ -1,0 +1,33 @@
+/* Shared cycle inspection keeps the history table mounted beside its evidence. */
+.v3-trades-workspace { display:grid; grid-template-columns:minmax(0, 1fr); align-items:start; gap:18px; overflow-anchor:none; }
+.v3-trades-workspace.has-detail, .v3-overview-workspace.v3-overview-workspace.has-detail { grid-template-columns:minmax(0, 1fr) 440px; }
+.v3-trades-list { min-width:0; }
+.v3-trades-list .v3-trader-table { font-size:14px; }
+.v3-trades-list .v3-trader-table td small { font-size:12px; }
+.v3-trades-list .is-expanded { background:#193341; box-shadow:inset 3px 0 #42bfb0; }
+.v3-cycle-panel.v3-cycle-panel { position:sticky; top:16px; width:auto; min-width:0; outline:none; }
+.v3-cycle-panel .v3-panel-scroll { overflow-anchor:none; }
+.v3-cycle-panel .v3-panel-facts dd { max-width:62%; overflow-wrap:anywhere; }
+.v3-cycle-panel .v3-panel-funding { margin-top:16px; }
+.v3-cycle-panel .v3-panel-funding summary, .v3-cycle-panel .v3-panel-technical summary { cursor:pointer; color:#b9cedb; font-size:13px; line-height:1.7; }
+.v3-cycle-panel .v3-panel-technical { padding:14px 18px; border-top:1px solid #2b4055; }
+.v3-cycle-panel .v3-panel-technical > summary { color:#8fd2c5; }
+.v3-cycle-panel .v3-panel-technical .v3-kv-grid { grid-template-columns:minmax(0, 1fr); margin-block:12px; }
+.v3-cycle-panel .v3-panel-technical .v3-section { margin-block:12px; }
+.v3-cycle-panel .v3-panel-technical .v3-section-head { padding:12px 0; }
+.v3-cycle-panel .v3-panel-technical .v3-section-head h2 { font-size:15px; }
+.v3-cycle-panel .v3-panel-technical .v3-section-head p, .v3-cycle-panel .v3-panel-technical p { font-size:12px; line-height:1.7; }
+.v3-cycle-panel .v3-panel-diagnostic-actions { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-block:12px; font-size:12px; }
+.v3-cycle-panel .v3-group-list button { grid-template-columns:1fr; gap:4px; padding:10px; }
+.v3-cycle-panel .v3-group-list strong { font-size:12px; overflow-wrap:anywhere; }
+.v3-cycle-panel .v3-panel-order-state { display:flex; gap:8px; flex-wrap:wrap; font-size:12px; color:#e6b580; }
+.v3-detail-backdrop { position:fixed; inset:0; z-index:40; border:0; border-radius:0; background:#050c17a6; cursor:default; }
+@media (max-width:1000px) {
+  .v3-trades-workspace.has-detail, .v3-overview-workspace.v3-overview-workspace.has-detail { grid-template-columns:minmax(0, 1fr); }
+  .v3-cycle-panel.v3-cycle-panel { position:fixed; top:12px; bottom:12px; left:auto; right:12px; width:min(460px, calc(100vw - 24px)); max-height:calc(100dvh - 24px); z-index:41; box-shadow:0 16px 60px #0009; }
+  .v3-cycle-panel .v3-panel-scroll { max-height:calc(100dvh - 113px); }
+}
+@media (max-width:460px) {
+  .v3-cycle-panel .v3-panel-technical { padding:14px; }
+  .v3-cycle-panel .v3-parallel-legs { grid-template-columns:minmax(0, 1fr); }
+}

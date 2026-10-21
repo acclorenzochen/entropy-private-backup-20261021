@@ -1,0 +1,8 @@
+{
+  "batch_id": "nbis-funding-6a7c5397aef24e5bbf9637e70a7816cb",
+  "pair_identity": "nbis-funding:hl:NBIS:lighter:NBIS",
+  "max_position_cycles": 5,
+  "loss_budget_usd": null,
+  "max_notional_usd": "200",
+  "approved_live": true
+}

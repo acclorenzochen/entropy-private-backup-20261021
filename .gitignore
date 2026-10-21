@@ -1,0 +1,29 @@
+# secrets & local config / 密钥与本地配置
+.env
+config.yaml
+
+# local machine / editor artifacts
+.DS_Store
+.impeccable/
+
+# runtime output / 运行时输出
+logs/
+*.log
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+*.egg-info/
+
+# web dashboard build artifacts
+dashboard/node_modules/
+dashboard/dist/
+dashboard/*.js
+dashboard/*.d.ts
+dashboard/*.tsbuildinfo

@@ -1,0 +1,397 @@
+# entropy-arb strategy configuration / 策略配置
+#
+#   cp config.example.yaml config.yaml     then edit / 复制后修改
+#
+# This file IS the strategy. Credentials never live here — they go in .env
+# (see .env.example). Every key is validated: a typo is a startup error, not
+# a setting that silently does nothing.
+# 本文件就是策略本身。密钥绝不放在这里（见 .env.example）。所有键名都会被校验：
+# 拼写错误会直接报错，而不是静默失效。
+#
+# WHICH MARKETS to trade is NOT in this file — you state it explicitly on
+# every start with command-line flags:
+#     python3 main.py --symbol SNDK --hedge lighter-rh
+# Entropy is always one leg; --hedge picks the other:
+#   lighter      Lighter mainnet            (USDC, 0 bps taker)
+#   lighter-rh   Lighter Robinhood chain    (USDG, 0 bps taker)
+#   tradexyz     Hyperliquid trade.xyz dex  (USDC, ~1 bps taker)
+# 交易哪个市场不在本文件中配置——每次启动时用命令行参数显式指定：
+#     python3 main.py --symbol SNDK --hedge lighter-rh
+# Entropy 永远是其中一条腿；--hedge 选择对冲腿（三选一，见上表）。
+
+# ============================ THE SIGNAL / 信号 ============================
+# premium_bps = (Entropy price / hedge price - 1) * 10000
+#
+#   SELL entropy + BUY hedge   when executable premium >= midline + upper
+#   BUY entropy + SELL hedge   when executable premium <= midline - lower
+#
+# These are statistical signal coordinates only. Whole-cycle admission also
+# prices fees, funding, execution cost, and the close legs below.
+#
+# midline_bps is a number YOU derive from recorded data. Run the bot
+# (--record-only) to collect logs/minutes.csv, then:  python3 tools/analyze.py
+#
+# midline_bps 是你根据采集数据设定的值。先运行机器人（--record-only）采集
+# logs/minutes.csv，再运行 python3 tools/analyze.py 获取建议值。
+# 这里的上下轨只是统计信号坐标；完整往返还会在下方统一计入手续费、资金费、
+# 执行成本和两条平仓腿。
+thresholds:
+  midline_bps: 0.0     # persistent premium center / 溢价长期中枢
+  upper_bps: 2.5       # bootstrap entry above midline / 冷启动中枢上方入场带
+  lower_bps: 2.0       # bootstrap entry below midline / 冷启动中枢下方入场带
+  exit_bps: 0.0        # return to the entry reference / 回到入场参考中枢
+  allow_sell_entropy_open: true
+  allow_buy_entropy_open: true
+
+premium_model:
+  max_book_age_ms: 1200
+  max_cross_venue_skew_ms: 500
+  degraded_after_sec: 5
+
+dynamic_midline:
+  enabled: true
+  sample_sec: 1.0
+  short_window_sec: 1200
+  long_window_sec: 10800
+  warmup_sec: 1800
+  min_samples: 600
+  shift_min_bps: 3.0
+  shift_sigma_mult: 2.0
+  base_move_bps_per_10m: 0.5
+  accelerated_move_bps_per_10m: 1.0
+  absolute_max_move_bps_per_10m: 1.25
+  recovery_ratio: 0.6
+  recovery_sec: 600
+
+adaptive_bands:
+  enabled: true
+  entry_sigma_mult: 1.0
+  min_upper_bps: 2.0
+  min_lower_bps: 2.0
+  max_upper_bps: 15.0
+  max_lower_bps: 15.0
+  max_sigma_bps: 8.0
+  sigma_window_sec: 1800
+
+# Opt-in: disabled by default to preserve the existing entry/exit frequency.
+# When enabled, REDUCE uses FIFO costs and may wait for a profitable exit;
+# exit_bps then becomes the OPEN/ADD scenario target, not a profit guarantee.
+profit_guard:
+  enabled: false
+  mode: soft                 # REDUCE PnL is a soft gate, not an IOC price cap
+  min_profit_usd: 0.01       # after all costs, per proposed matched slice
+  # Omitted buffers each default to leg_slippage_bps + second_leg_slippage_bps.
+  # Each value covers ONE paired execution. OPEN reserves both; REDUCE only
+  # reserves exit (entry execution loss is already in its actual cost basis).
+  # entry_buffer_bps: 8.5
+  # exit_buffer_bps: 8.5
+
+# ======================== CONFIG HOT RELOAD / 配置热更新 ====================
+# The strategy watcher validates this file and applies signal/model and
+# bootstrap-economic changes without restarting the process. Venue/account,
+# leverage, sizing, and order-path settings still require a restart.
+# 修改后会先完整校验，再从下一次策略扫描起应用信号/模型和冷启动经济参数；交易所、
+# 账户、杠杆、仓位规模和订单链路参数仍需重启。
+hot_reload:
+  enabled: true
+  poll_sec: 2.0
+
+# ======================= PERSISTENCE / 持久化 ===============================
+# SQLite is the source of truth for execution checkpoints, fills, position
+# reconciliation, PnL attribution and migrated historical CSV data.
+persistence:
+  sqlite_path: logs/entropy_arb.sqlite3
+  migrate_legacy: true
+  lock_file: logs/entropy-arb.lock
+
+# ================== WECHAT CLAWBOT / 微信 ClawBot ===========================
+# Hourly read-only status reports.  Run `python main.py --wechat-setup` to
+# authorize by QR; the token is stored in the ignored credentials file.
+# 每小时发送只读运行报告。运行 `python main.py --wechat-setup` 扫码授权，
+# token 保存到被 git 忽略的本地凭据文件，绝不要写进本文件。
+wechat_clawbot:
+  enabled: false
+  base_url: https://ilinkai.weixin.qq.com
+  interval_sec: 3600
+  poll_timeout_sec: 35
+  request_timeout_sec: 45
+  state_file: logs/wechat_clawbot_state.json
+  credentials_file: logs/wechat_clawbot_credentials.json
+  send_startup: false
+
+midline_lag_guard:
+  enabled: true
+  warn_bps: 1.5
+  block_bps: 3.0
+  persist_sec: 900
+  accelerate_bps: 2.0
+  accelerate_persist_sec: 300
+  recovery_sec: 90
+  recovery_bps: 2.0
+  warning_entry_penalty_bps: 1.5
+  block_accelerating: true
+  block_blocked: true
+
+# Lag/regime changes the reference and required deviation; it does not by
+# itself put a flat strategy into reduce-only mode.
+reference_policy:
+  enabled: true
+  warning_penalty_bps: 1.0
+  accelerating:
+    mode: blended_midline
+    sigma_mult: 1.5
+  shifting:
+    mode: dynamic_center
+    sigma_mult: 2.0
+    min_deviation_bps: 2.0
+  blocked:
+    mode: dynamic_center
+    sigma_mult: 2.0
+    min_deviation_bps: 2.5
+  extreme_dislocation:
+    enabled: true
+    sigma_mult: 3.0
+
+# OPEN admission uses expected execution cost; order limits remain physical
+# safety caps in the execution section below.  These values are hot-reloadable.
+economic_execution:
+  # These economics are shared by normal and bootstrap-sampled cycles.
+  min_expected_cycle_profit_bps: 0.5
+  min_expected_cycle_profit_usd: 0.0002
+  open_first_cost_percentile: 0.75
+  open_hedge_cost_percentile: 0.90
+  close_first_cost_percentile: 0.75
+  close_hedge_cost_percentile: 0.90
+  safety_margin_bps: 0.5
+
+# Full-cycle bootstrap sampling. Keep this disabled in copied templates until
+# account, venue and risk settings have been reviewed.
+bootstrap:
+  enabled: false
+  mode: full_cycle_sampling
+  target_complete_cycles: 5
+  max_complete_cycles: 10
+  min_execution_samples_per_phase: 3
+  max_order_notional_usd: 15
+  max_expected_loss_bps: 2.0
+  max_expected_loss_usd: 0.004
+  max_cycle_loss_usd: 0.006
+  cumulative_loss_budget_usd: 0.05
+  auto_disable: true
+  min_gross_after_fee_bps: -1.0
+  first_leg_residual_bps: 0.10
+  hedge_leg_residual_bps: 0.15
+  empirical_full_weight_samples: 6
+  # The remaining legacy execution keys are retained for config/API
+  # compatibility only; bootstrap never overrides normal execution.
+  # Deprecated compatibility fields; bootstrap never overrides model warmup.
+  dynamic_midline_warmup_sec: 180
+  dynamic_midline_min_samples: 120
+  open_execution_room_min_bps: 0.5
+  open_target_execution_room_bps: 3.0
+  open_sampling_execution_cap_bps: 5.0
+  open_campaign_sec: 5.0
+  open_campaign_max_attempts: 4
+  open_retry_interval_sec: 0.05
+  open_hedge_hard_cap_bps: 15.0
+  fast_exit_after_sec: 10.0
+  fast_exit_min_profit_usd: -0.002
+  sampling_exit_after_sec: 30.0
+  sampling_exit_floor_usd: -0.004
+  stale_exit_after_sec: 120.0
+  stale_exit_floor_usd: -0.006
+  close_min_execution_room_bps: 1.0
+  close_target_execution_room_bps: 2.0
+  close_campaign_sec: 5.0
+  close_campaign_max_attempts: 5
+  close_retry_interval_sec: 0.05
+  close_hedge_hard_cap_bps: 15.0
+  entropy_order_budget_per_min: 10
+  hedge_order_budget_per_min: 10
+  max_campaigns_per_signal_episode: 3
+  reopen_improvement_bps: 2.0
+
+cycle_exit:
+  enabled: true
+  mode: fill_pnl
+  anchor_mode: entry_midline
+  max_midline_drift_bps: 4.0
+  reset_on_flat: true
+  state_json: logs/cycle_state.json
+  normal_min_profit_usd: 0.00
+  fast_exit_after_sec: 20
+  fast_exit_min_profit_usd: -0.003
+  long_hold_after_sec: 600
+  hard_timeout_enabled: true
+  hard_timeout_sec: 3600
+  hard_timeout_min_profit_usd: -0.02  # 兼容展示；超时风险退出不受此利润地板阻挡
+  pnl_loss_stop_enabled: false
+  max_cycle_loss_bps: null
+  adverse_drift_exit_enabled: false
+  adverse_drift_enabled: false
+  adverse_drift_min_age_sec: 30
+  adverse_drift_min_loss_usd: -0.03
+  adverse_drift_bps: 5.0
+  adverse_drift_persist_sec: 5.0
+  regime_stop_enabled: false
+  regime_stop_min_age_sec: 90
+  regime_stop_min_loss_usd: -0.03
+  regime_stop_require_midline_warning: true
+
+reentry_guard:
+  enabled: true
+  post_risk_exit_cooldown_sec: 30
+  basis_reset_bps: 1.0
+  same_direction_only: true
+
+margin_risk:
+  enabled: true
+  warning_available_ratio: 0.20
+  critical_available_ratio: 0.05
+  on_unavailable: ignore
+
+cycle:
+  allow_add: false          # one OPEN -> one REDUCE -> flat cycle
+  max_active_pairs: 1
+
+funding:
+  enabled: true
+  poll_sec: 60
+  stale_sec: 180
+  expected_hold_hours: 2.0
+  max_adverse_cost_bps: 4.0
+  on_unavailable: block_open
+
+# ======================== VENUES / 交易所参数 ==============================
+entropy:
+  dex: io                    # Entropy's dex name on Hyperliquid / Entropy 的 dex 名
+  leverage: 3                # explicitly enforced at live startup / 实盘启动时强制设置
+  taker_fee_bps: 0.0         # taker fee / 吃单手续费
+  max_position_usd: 1000     # position cap / 持仓上限（美元）
+  max_orders_per_min: 120    # order-send budget, sliding 60s / 每分钟下单预算
+
+hedge:
+  leverage: 3                # explicitly enforced at live startup / 实盘启动时强制设置
+  taker_fee_bps: 0.0         # Lighter venues: 0; tradexyz: ~1.0
+  max_position_usd: 1000
+  max_orders_per_min: 30     # Lighter's ceiling is ~40/min / Lighter 上限约 40/分钟
+
+# ========================= SIZING / 下单规模 ===============================
+sizing:
+  take_fraction: 0.25          # bootstrap slice / 冷启动切片
+  max_order_notional_usd: 15    # bootstrap cap / 冷启动单笔名义上限
+  min_order_notional_usd: 10   # skip dust / 低于此名义不下单
+
+# ==================== INVENTORY LADDER / 库存阶梯 ==========================
+# Extra bps required once a venue's position passes floor_frac of its cap in
+# the adding direction — ramps linearly to scale_bps at 100% of the cap.
+# Slows down one-sided accumulation without hard-stopping the strategy.
+# 当某交易所持仓超过上限的 floor_frac 后，同方向继续加仓需额外溢价，线性增加到
+# 满仓时的 scale_bps。避免单边持仓快速堆满。 scale_bps: 0 disables / 0 为关闭。
+inventory:
+  scale_bps: 10.0
+  floor_frac: 0
+
+# ======================= EXECUTION / 执行参数 ==============================
+execution:
+  premium_persist_sec: 0     # legacy alias; action-specific values below win
+  cooldown_sec: 0.0          # legacy alias; action-specific values below win
+  settle_timeout_sec: 10.0      # wait for fill confirmation / 等待成交确认
+  recovery_timeout_sec: 30.0    # unknown fill cost before bounded emergency exit
+  leg_slippage_bps: 2.5        # Entropy first-leg IOC price protection
+  second_leg_slippage_bps: 6.0 # Lighter hedge after confirmed Entropy fill
+  min_edge_surplus_bps: 0.5
+  hedge_slippage_bps: 12.0     # final emergency flattening protection
+  no_fill_retry_sec: 3.0       # Entropy zero-fill retry delay
+  net_tolerance_base: 0.001    # max tolerated net delta (base units) / 允许的净敞口
+  max_consecutive_errors: 3    # halt after N straight failures / 连续失败 N 次后停机
+  rate_limit_pause_sec: 10.0   # pause a 429'd venue this long / 被限频后的暂停时长
+  staleness_sec: 10.0          # a feed older than this is stale / 行情超时判定
+  reconcile_sec: 15.0          # on-chain position sync cadence / 链上持仓核对周期
+  venue_probe_sec: 30.0        # probe cadence for a down venue / 故障交易所探测周期
+  http_keepalive_sec: 10.0     # keep order-path TLS warm; 0 = off / 订单链路保活
+  # Throughput-first action-specific execution. These order-path settings
+  # require a restart; the bounded campaign/bound policy below is hot-reloadable.
+  open_persist_sec: 0.15
+  reduce_persist_sec: 0.0
+  open_cooldown_sec: 3.0
+  reduce_cooldown_sec: 0.0
+  open_first_leg_slippage_bps: 3.5
+  reduce_first_leg_slippage_bps: 7.0
+  open_second_leg_slippage_bps: 8.0
+  reduce_second_leg_slippage_bps: 12.0
+  open_no_fill_retry_sec: 1.0
+  reduce_no_fill_retry_sec: 0.4
+  emergency_slippage_bps: 20.0
+  max_reduce_retry_attempts: 20
+  # Reserved for emergency/recovery flattening. Economic exits reprice from
+  # the live PnL budget on every retry instead of using this schedule.
+  reduce_retry_escalation_bps: [4.0, 6.0, 8.0, 12.0]
+
+  # Economic REDUCE campaign and dynamic OPEN execution share this namespace.
+  exit_campaign_sec: 4.0
+  exit_campaign_retry_interval_sec: 0.05
+  dynamic_hedge_reserve:
+    enabled: true
+    min_bps: 2.0
+    max_bps: 8.0
+    adverse_move_percentile: 0.95
+    safety_margin_bps: 1.0
+  dynamic_open_first_leg:
+    enabled: true
+    min_bps: 3.5
+    max_bps: 8.0
+    adverse_move_percentile: 0.90
+    safety_margin_bps: 0.5
+  open_retry_campaign_sec: 4.0
+  open_retry_interval_sec: 0.05
+  open_retry_max_attempts: 3
+  open_execution_room_min_bps: 1.0
+  # Strategy budgets are independent from each venue's hard API ceiling.
+  # Keep recovery capacity available for reconciliation/flattening.
+  open_attempts_per_min: 8
+  reduce_attempts_per_min: 10
+  recovery_reserve_per_min: 2
+  reserve_reduce_slots: 2
+  open_first_leg_hard_cap_bps: 10.0
+  open_second_leg_hard_cap_bps: 12.0
+  exit_campaign_max_attempts: 4
+  reopen_improvement_bps: 3.0
+  max_campaigns_per_signal_episode: 2
+
+# ================== DATA RECORDER / 数据采集 ===============================
+# Always-on while the bot runs: samples both real order books 1/sec and
+# writes one CSV row per minute. This is the input for tools/analyze.py.
+# 机器人运行期间自动开启：每秒采样两边真实盘口，每分钟写一行 CSV，
+# 供 tools/analyze.py 分析并设定上方 thresholds。
+recorder:
+  enabled: true
+  csv: logs/minutes.csv
+  seconds_csv: logs/seconds.csv
+
+# ====================== WEB DASHBOARD / Web 看板 ==========================
+# Read-only localhost status surface. The API server is started separately:
+# uvicorn entropy_arb.dashboard_api.app:app --host 127.0.0.1 --port 8765
+dashboard:
+  enabled: true
+  status_json: logs/status.json
+  pnl_state_json: logs/pnl_state.json
+  api_host: 127.0.0.1
+  api_port: 8765
+  snapshot_sec: 1.0
+  day_timezone: Asia/Taipei
+
+# ==================== LOGGING & DASHBOARD / 日志与仪表盘 ====================
+# On a terminal the bot shows a live Rich dashboard (books, signal, positions,
+# PnL, recent executions); log lines then go to `file` instead of the console.
+# Off-terminal runs (nohup/systemd) fall back to plain console logs
+# automatically; --no-dashboard forces that.
+# 在终端运行时显示实时 Rich 仪表盘（盘口、信号、持仓、盈亏、最近成交），
+# 日志写入 `file` 而不再打印到屏幕。非终端环境（nohup/systemd）自动退回
+# 纯日志模式；也可用 --no-dashboard 强制关闭。
+logging:
+  level: INFO
+  status_interval_sec: 30.0
+  trades_csv: logs/trades.csv
+  dashboard: true
+  file: logs/engine.log

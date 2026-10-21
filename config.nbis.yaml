@@ -1,0 +1,25 @@
+# NBIS V3 连接模板；密钥仍由 .env 提供，公共预检无需密钥。
+# 当前 load_config schema 必需的占位项；V3 不执行这些 legacy 阈值。
+thresholds:
+  midline_bps: 0.0
+  upper_bps: 3.0
+  lower_bps: 3.0
+  exit_bps: 0.0
+
+entropy:
+  dex: io
+  leverage: 7
+  taker_fee_bps: 0.0
+  max_position_usd: 200.0
+  max_orders_per_min: 6
+
+hedge:
+  leverage: 7
+  taker_fee_bps: 0.0
+  max_position_usd: 200.0
+  max_orders_per_min: 6
+
+persistence:
+  sqlite_path: logs/v3/nbis/legacy-unused.sqlite3
+  migrate_legacy: false
+  lock_file: logs/entropy-arb.lock

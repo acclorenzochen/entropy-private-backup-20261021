@@ -1,0 +1,15 @@
+{
+  "strategy_mode": "funding_hedge",
+  "max_notional_usd": "200",
+  "funding_settlements_required": 2,
+  "funding_poll_seconds": 30,
+  "funding_stale_seconds": 90,
+  "funding_reversal_samples": 3,
+  "funding_reversal_seconds": 60,
+  "funding_remaining_cost_limit_usd": "0.5",
+  "funding_round_loss_limit_usd": null,
+  "funding_liquidation_distance": "0.02",
+  "funding_risk_poll_seconds": 2,
+  "funding_risk_stale_seconds": 10,
+  "funding_accounting_grace_seconds": 120
+}

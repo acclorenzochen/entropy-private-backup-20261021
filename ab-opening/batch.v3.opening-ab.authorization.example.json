@@ -1,0 +1,9 @@
+{
+  "batch_id": "sndk-lighter-v3-opening-ab-20261011",
+  "pair_identity": "default:hl:SNDK:lighter:SNDK",
+  "max_position_cycles": 20,
+  "loss_budget_usd": null,
+  "max_notional_usd": "200",
+  "approved_live": false,
+  "opening_experiment_id": "sndk-opening-ab-20-20261011"
+}

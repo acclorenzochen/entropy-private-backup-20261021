@@ -1,0 +1,8 @@
+{
+  "batch_id": "REQUIRES_EXPLICIT_USER_AUTHORIZATION",
+  "pair_identity": "default:hl:SYMBOL:lighter:SYMBOL",
+  "max_position_cycles": 20,
+  "loss_budget_usd": "1.00",
+  "max_notional_usd": "15.00",
+  "approved_live": false
+}

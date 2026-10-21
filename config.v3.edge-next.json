@@ -1,0 +1,59 @@
+{
+  "cold_seconds": 30,
+  "cold_samples": 20,
+  "warm_seconds": 5,
+  "warm_samples": 5,
+  "checkpoint_max_age_seconds": 120,
+  "reset_gap_seconds": 10,
+  "reference_half_life_seconds": 60,
+  "max_book_age_seconds": 1,
+  "max_book_skew_seconds": 0.5,
+  "entry_band_bps": "5",
+  "execution_allowance_bps": "1",
+  "sampling_floor_bps": "0",
+  "max_notional_usd": "200",
+  "exit_reversion_bps": "2",
+  "exit_loss_allowance_usd": "0.01",
+  "first_rooms_bps": [
+    "3",
+    "5",
+    "8"
+  ],
+  "hedge_rooms_bps": [
+    "4",
+    "8",
+    "12"
+  ],
+  "first_hard_cap_bps": "10",
+  "hedge_hard_cap_bps": "12",
+  "entropy_orders_per_min": 6,
+  "hedge_orders_per_min": 6,
+  "single_cycle_review_loss_usd": null,
+  "equity_poll_seconds": 5,
+  "flat_position_probe_sec": 1.0,
+  "flat_position_lease_sec": 1.5,
+  "open_first_rooms_bps": [
+    "3",
+    "3",
+    "3"
+  ],
+  "open_first_hard_cap_bps": "10",
+  "close_first_rooms_bps": [
+    "12",
+    "12",
+    "12"
+  ],
+  "close_first_hard_cap_bps": "12",
+  "close_hedge_rooms_bps": [
+    "12",
+    "12",
+    "12"
+  ],
+  "close_hedge_hard_cap_bps": "12",
+  "exit_fast_path_enabled": false,
+  "exit_min_gross_profit_usd": "0.05",
+  "lighter_zero_fee_account_index": 310344,
+  "lighter_zero_fee_batch_id": "sndk-lighter-v3-20260923-002",
+  "lighter_zero_fee_policy_source": "user_authorization_2026-10-11_lighter_ordinary_ioc_zero_fee",
+  "exit_min_gross_profit_bps": "2.5"
+}
